@@ -10,6 +10,7 @@ AI Concepts Covered:
 
 from search.bfs import bfs
 from search.dfs import dfs
+from search.astar import astar
 
 
 def compare_uninformed(city_graph, start, goal):
@@ -28,6 +29,8 @@ def compare_uninformed(city_graph, start, goal):
     # Run DFS
     dfs_path, dfs_cost, dfs_expanded = dfs(city_graph, start, goal)
 
+    astar_path, astar_cost, astar_expanded = astar(city_graph, start, goal)
+
     # Print Results
     print("\n--- BFS Result ---")
     print("Path:", bfs_path)
@@ -38,6 +41,11 @@ def compare_uninformed(city_graph, start, goal):
     print("Path:", dfs_path)
     print("Path Cost:", dfs_cost)
     print("Nodes Expanded:", dfs_expanded)
+
+    print("\n--- A* Result ---")
+    print("Path:", astar_path)
+    print("Path Cost:", astar_cost)
+    print("Nodes Expanded:", astar_expanded)
 
     print("\n========== ANALYSIS ==========")
 

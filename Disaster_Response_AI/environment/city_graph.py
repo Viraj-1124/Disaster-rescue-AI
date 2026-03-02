@@ -22,6 +22,8 @@ class CityGraph:
         # Store blocked roads as tuples: ('A', 'B')
         self.blocked_roads = set()
 
+        self.coordinates = {}
+
     # -------------------------------
     # Graph Construction
     # -------------------------------
@@ -39,6 +41,11 @@ class CityGraph:
 
         self.graph[from_node][to_node] = cost
         self.graph[to_node][from_node] = cost
+
+    def set_coordinates(self, node, x, y):
+        """Assign (x, y) coordinates to a location.
+        Used for heuristic calculation."""
+        self.coordinates[node] = (x, y)
 
     # -------------------------------
     # Disaster Handling
