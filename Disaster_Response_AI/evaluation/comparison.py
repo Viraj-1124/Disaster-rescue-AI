@@ -42,6 +42,7 @@ def compare_uninformed(city_graph, start, goal):
     print("Path Cost:", dfs_cost)
     print("Nodes Expanded:", dfs_expanded)
 
+    print("\n========== INFORMED SEARCH COMPARISON ==========")
     print("\n--- A* Result ---")
     print("Path:", astar_path)
     print("Path Cost:", astar_cost)
@@ -49,17 +50,22 @@ def compare_uninformed(city_graph, start, goal):
 
     print("\n========== ANALYSIS ==========")
 
-    if bfs_cost < dfs_cost:
+    if min(bfs_cost,dfs_cost,astar_cost)==bfs_cost:
         print("BFS found a cheaper path.")
-    elif dfs_cost < bfs_cost:
+    elif min(bfs_cost,dfs_cost,astar_cost)==dfs_cost:
         print("DFS found a cheaper path.")
+    elif min(bfs_cost,dfs_cost,astar_cost)==astar_cost:
+        print("Astar found a cheaper path.")
     else:
         print("Both found equal cost paths.")
 
-    if bfs_expanded < dfs_expanded:
+
+    if min(bfs_expanded,dfs_expanded,astar_expanded)==bfs_expanded:
         print("BFS expanded fewer nodes.")
-    elif dfs_expanded < bfs_expanded:
+    elif min(bfs_expanded,dfs_expanded,astar_expanded)==dfs_expanded:
         print("DFS expanded fewer nodes.")
+    elif min(bfs_expanded,dfs_expanded,astar_expanded)==astar_expanded:
+        print("A* expanded fewer nodes.")
     else:
         print("Both expanded equal number of nodes.")
 
