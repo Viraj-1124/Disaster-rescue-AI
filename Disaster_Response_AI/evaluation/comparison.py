@@ -21,8 +21,6 @@ def compare_uninformed(city_graph, start, goal):
     - Nodes expanded
     """
 
-    print("\n========== UNINFORMED SEARCH COMPARISON ==========")
-
     # Run BFS
     bfs_path, bfs_cost, bfs_expanded = bfs(city_graph, start, goal)
 
@@ -31,42 +29,26 @@ def compare_uninformed(city_graph, start, goal):
 
     astar_path, astar_cost, astar_expanded = astar(city_graph, start, goal)
 
-    # Print Results
-    print("\n--- BFS Result ---")
-    print("Path:", bfs_path)
-    print("Path Cost:", bfs_cost)
-    print("Nodes Expanded:", bfs_expanded)
-
-    print("\n--- DFS Result ---")
-    print("Path:", dfs_path)
-    print("Path Cost:", dfs_cost)
-    print("Nodes Expanded:", dfs_expanded)
-
-    print("\n========== INFORMED SEARCH COMPARISON ==========")
-    print("\n--- A* Result ---")
-    print("Path:", astar_path)
-    print("Path Cost:", astar_cost)
-    print("Nodes Expanded:", astar_expanded)
-
     print("\n========== ANALYSIS ==========")
+    best_cost = min(bfs_cost, dfs_cost, astar_cost)
 
-    if min(bfs_cost,dfs_cost,astar_cost)==bfs_cost:
-        print("BFS found a cheaper path.")
-    elif min(bfs_cost,dfs_cost,astar_cost)==dfs_cost:
-        print("DFS found a cheaper path.")
-    elif min(bfs_cost,dfs_cost,astar_cost)==astar_cost:
-        print("Astar found a cheaper path.")
-    else:
-        print("Both found equal cost paths.")
+    best_algorithms = []
+    if bfs_cost == best_cost:
+        best_algorithms.append("BFS")
+    if dfs_cost == best_cost:
+        best_algorithms.append("DFS")
+    if astar_cost == best_cost:
+        best_algorithms.append("A*")
 
+    print("Best path cost achieved by:", ", ".join(best_algorithms))
 
-    if min(bfs_expanded,dfs_expanded,astar_expanded)==bfs_expanded:
-        print("BFS expanded fewer nodes.")
-    elif min(bfs_expanded,dfs_expanded,astar_expanded)==dfs_expanded:
-        print("DFS expanded fewer nodes.")
-    elif min(bfs_expanded,dfs_expanded,astar_expanded)==astar_expanded:
-        print("A* expanded fewer nodes.")
-    else:
-        print("Both expanded equal number of nodes.")
+    best_nodes = min(bfs_expanded, dfs_expanded, astar_expanded)
+    best_expansion = []
+    if bfs_expanded == best_nodes:
+        best_expansion.append("BFS")
+    if dfs_expanded == best_nodes:
+        best_expansion.append("DFS")
+    if astar_expanded == best_nodes:
+        best_expansion.append("A*")
 
-    print("==================================================\n")
+    print("Fewest nodes expanded by:", ", ".join(best_expansion))
