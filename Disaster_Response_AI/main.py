@@ -8,7 +8,6 @@ from csp.resource_csp import ResourceCSP
 from csp.backtracking import backtracking_search
 from visualization.graph_visualizer import visualize_city_graph
 
-
 city = CityGraph()
 # CITY ROAD NETWORK (25 NODES)
 
@@ -90,7 +89,6 @@ city.set_coordinates('HOSP',12,3)
 city.block_road('F','J')
 city.block_road('D','I')
 city.block_road('N','O')
-print("\nDisaster Update: Road C-E blocked due to debris")
 
 ambulances = [
 {"id":"A1","location":"A","fuel":20},
@@ -129,44 +127,64 @@ print("Nodes Expanded:", expanded)
 
 compare_uninformed(city, 'A', 'H')
 csp = ResourceCSP(ambulances,victims,hospital_capacity,city)
-solution = backtracking_search(csp)
+remaining_victims = victims.copy()
+round_number = 1
 
-print("\n========== RESCUE ASSIGNMENT ==========")
-if not solution:
-    print("No victims can be rescued with current constraints.")
-else:
+while remaining_victims:
+
+    print(f"\n================ RESCUE ROUND {round_number} ================")
+
+    csp = ResourceCSP(ambulances, remaining_victims, hospital_capacity, city)
+    solution = backtracking_search(csp)
+
+    if not solution:
+        print("No further rescues possible due to fuel or constraints.")
+        break
+
     rescued = list(solution.keys())
-    all_victims = [v["id"] for v in victims]
-    pending = [v for v in all_victims if v not in rescued]
+    pending = [v for v in remaining_victims if v["id"] not in rescued]
+
+    print("\n========== RESCUE ASSIGNMENT ==========")
     print("Rescuable victims:", rescued)
+
     if pending:
-        print("Pending victims:", pending)
+        print("Pending victims:", [v["id"] for v in pending])
 
+    print("\n========== RESCUE DECISION EXPLANATION ==========")
 
-print("\n========== RESCUE DECISION EXPLANATION ==========")
-ambulance_data = {a["id"]:a for a in ambulances}
-victim_data = {v["id"]:v for v in victims}
+    ambulance_data = {a["id"]: a for a in ambulances}
+    victim_data = {v["id"]: v for v in remaining_victims}
 
-for victim, ambulance in solution.items():
-    v = victim_data[victim]
-    a = ambulance_data[ambulance]
-    path, dist, _ = astar(city,a["location"],v["location"])
+    for victim, ambulance in solution.items():
 
-    print(f"\nAmbulance {ambulance} assigned to Victim {victim}")
-    print(f"Severity: {v['severity']}")
-    print(f"Distance to victim: {dist}")
-    print(f"Fuel available: {a['fuel']}")
-    print(f"Chosen path: {path}")
+        v = victim_data[victim]
+        a = ambulance_data[ambulance]
 
+        path, dist, _ = astar(city, a["location"], v["location"])
 
-rescued = set(solution.keys())
-all_victims = set(victim_data.keys())
-pending = all_victims - rescued
+        print(f"\nAmbulance {ambulance} assigned to Victim {victim}")
+        print(f"Severity: {v['severity']}")
+        print(f"Distance to victim: {dist}")
+        print(f"Fuel available: {a['fuel']}")
+        print(f"Chosen path: {path}")
 
-if pending:
-    print("\nPending victims due to limited resources:")
-    for v in pending:
-        victim = victim_data[v]
-        print(f"Victim {v}")
-        print("Severity:", victim["severity"])
-        print("Reason: insufficient ambulances or fuel constraint")
+        # update fuel
+        a["fuel"] -= dist
+
+        # update ambulance location
+        a["location"] = v["location"]
+
+    # remove rescued victims
+    remaining_victims = pending
+
+    round_number += 1
+
+if remaining_victims:
+
+    print("\n========== FINAL STATUS ==========")
+    print("Pending victims due to limited resources:")
+
+    for v in remaining_victims:
+        print(f"\nVictim {v['id']}")
+        print("Severity:", v["severity"])
+        print("Reason: insufficient fuel or unreachable location")
