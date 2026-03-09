@@ -43,32 +43,6 @@ def backtracking_search(csp):
 
     return best_assignment
 
-def backtrack(assignment, csp):
-
-    if len(assignment) == len(csp.variables):
-        return assignment
-
-    var = select_unassigned_variable(assignment, csp)
-
-    for value in list(csp.domains[var]):
-
-        new_assignment = assignment.copy()
-        new_assignment[var] = value
-
-        if csp.is_valid(new_assignment):
-
-            # Forward Checking
-            removed = forward_check(var, value, csp)
-
-            result = backtrack(new_assignment, csp)
-
-            if result is not None:
-                return result
-
-            restore_domains(removed, csp)
-
-    return None
-
 
 def select_unassigned_variable(assignment, csp):
 
