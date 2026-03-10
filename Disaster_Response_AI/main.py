@@ -1,12 +1,11 @@
 from environment.city_graph import CityGraph
 from search.bfs import bfs
 from search.dfs import dfs
-from search.dfs import dfs
 from search.astar import astar
 from evaluation.comparison import compare_uninformed
 from csp.resource_csp import ResourceCSP
 from csp.backtracking import backtracking_search
-from visualization.graph_visualizer import visualize_city_graph
+from visualization.graph_visualizer import visualize_city
 
 city = CityGraph()
 # CITY ROAD NETWORK (25 NODES)
@@ -91,7 +90,7 @@ city.block_road('D','I')
 city.block_road('N','O')
 
 ambulances = [
-{"id":"A1","location":"A","fuel":20},
+{"id":"A1","location":"A","fuel":200},
 {"id":"A2","location":"M","fuel":15},
 {"id":"A3","location":"Q","fuel":18}
 ]
@@ -105,7 +104,6 @@ victims = [
 ]
 
 hospital_capacity = 10
-visualize_city_graph(city)
 
 print("\n--- BFS Result ---")
 path, cost, expanded = bfs(city, 'A', 'H')
@@ -130,6 +128,8 @@ csp = ResourceCSP(ambulances,victims,hospital_capacity,city)
 remaining_victims = victims.copy()
 round_number = 1
 
+print("\nStarting Disaster Rescue Simulation...")
+visualize_city(city, ambulances, victims, "HOSP", None)
 while remaining_victims:
 
     print(f"\n================ RESCUE ROUND {round_number} ================")
@@ -160,19 +160,30 @@ while remaining_victims:
         v = victim_data[victim]
         a = ambulance_data[ambulance]
 
-        path, dist, _ = astar(city, a["location"], v["location"])
+        # Path ambulance -> victim
+        path_to_victim, dist1, _ = astar(city, a["location"], v["location"])
+
+        # Path victim -> hospital
+        path_to_hospital, dist2, _ = astar(city, v["location"], "HOSP")
+
+        total_distance = dist1 + dist2
 
         print(f"\nAmbulance {ambulance} assigned to Victim {victim}")
         print(f"Severity: {v['severity']}")
-        print(f"Distance to victim: {dist}")
+        print(f"Distance to victim: {dist1}")
+        print(f"Distance to hospital: {dist2}")
+        print(f"Total rescue distance: {total_distance}")
         print(f"Fuel available: {a['fuel']}")
-        print(f"Chosen path: {path}")
+
+        print(f"Path to victim: {path_to_victim}")
+        print(f"Path to hospital: {path_to_hospital}")
 
         # update fuel
-        a["fuel"] -= dist
+        a["fuel"] = max(0, a["fuel"] - total_distance)
 
-        # update ambulance location
-        a["location"] = v["location"]
+        # ambulance now at hospital
+        a["location"] = "HOSP"
+    visualize_city(city, ambulances, remaining_victims, "HOSP", solution)
 
     # remove rescued victims
     remaining_victims = pending
