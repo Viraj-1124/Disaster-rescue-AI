@@ -6,9 +6,15 @@ from evaluation.comparison import compare_uninformed
 from csp.resource_csp import ResourceCSP
 from csp.backtracking import backtracking_search
 from visualization.graph_visualizer import visualize_city
+from logic.knowledge_base import KnowledgeBase
+from logic.inference_engine import InferenceEngine
+
 
 city = CityGraph()
 # CITY ROAD NETWORK (25 NODES)
+kb = KnowledgeBase()
+
+engine = InferenceEngine()
 
 # Central Area
 city.add_road('A','B',4)
@@ -90,7 +96,7 @@ city.block_road('D','I')
 city.block_road('N','O')
 
 ambulances = [
-{"id":"A1","location":"A","fuel":200},
+{"id":"A1","location":"A","fuel":20},
 {"id":"A2","location":"M","fuel":15},
 {"id":"A3","location":"Q","fuel":18}
 ]
@@ -104,6 +110,22 @@ victims = [
 ]
 
 hospital_capacity = 10
+kb.add_victims(victims)
+kb.add_ambulances(ambulances)
+# ================= LOGICAL AGENT EXECUTION =================
+
+print("\n========== LOGICAL AGENT REASONING ==========")
+
+priority_order = {"HIGH": 1, "MEDIUM": 2, "LOW": 3}
+
+for victim in victims:
+    reasoning = engine.evaluate_victim(victim)
+    victim.update(reasoning)
+
+    print(f"Victim {victim['id']} → Severity: {victim['severity']} → Priority: {victim['priority']}")
+
+# Sort victims based on priority BEFORE CSP
+victims.sort(key=lambda v: priority_order.get(v.get("priority", "LOW")))
 
 print("\n--- BFS Result ---")
 path, cost, expanded = bfs(city, 'A', 'H')
@@ -124,7 +146,7 @@ print("Path Cost:", cost)
 print("Nodes Expanded:", expanded)
 
 compare_uninformed(city, 'A', 'H')
-csp = ResourceCSP(ambulances,victims,hospital_capacity,city)
+csp = ResourceCSP(ambulances, victims, hospital_capacity, city, engine)
 remaining_victims = victims.copy()
 round_number = 1
 
@@ -134,7 +156,7 @@ while remaining_victims:
 
     print(f"\n================ RESCUE ROUND {round_number} ================")
 
-    csp = ResourceCSP(ambulances, remaining_victims, hospital_capacity, city)
+    csp = ResourceCSP(ambulances, victims, hospital_capacity, city, engine)
     solution = backtracking_search(csp)
 
     if not solution:
@@ -194,6 +216,11 @@ if remaining_victims:
 
     print("\n========== FINAL STATUS ==========")
     print("Pending victims due to limited resources:")
+    for victim in remaining_victims:
+        reasoning = engine.evaluate_victim(victim)
+        victim.update(reasoning)
+
+    remaining_victims.sort(key=lambda v: priority_order.get(v.get("priority", "LOW")))
 
     for v in remaining_victims:
         print(f"\nVictim {v['id']}")

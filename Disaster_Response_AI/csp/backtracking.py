@@ -12,16 +12,18 @@ AI Concepts Covered:
 def backtracking_search(csp):
 
     best_assignment = {}
-    best_score = 0
+    best_score = float('-inf')
 
     def backtrack(assignment):
 
         nonlocal best_assignment, best_score
 
-        # score = number of rescued victims
-        if len(assignment) > best_score:
-            best_score = len(assignment)
-            best_assignment = assignment.copy()
+        if len(assignment) > 0:
+            score = csp.calculate_score(assignment)
+
+            if score > best_score:
+                best_score = score
+                best_assignment = assignment.copy()
 
         for var in csp.variables:
 
@@ -33,14 +35,11 @@ def backtracking_search(csp):
                     new_assignment[var] = value
 
                     if csp.is_valid(new_assignment):
-
                         backtrack(new_assignment)
 
-                # important: stop exploring deeper after first unassigned variable
-                return
+                return  # important (same as your logic)
 
     backtrack({})
-
     return best_assignment
 
 
