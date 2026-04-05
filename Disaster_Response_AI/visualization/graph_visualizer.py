@@ -98,4 +98,6 @@ def visualize_city(city, ambulances, victims, hospital, assignments=None):
         ambulance["location"] = hospital
 
     plt.ioff()
-    plt.show()
+    # plt.show()  # Commented out to avoid blocking
+    plt.savefig(f"rescue_simulation_{time.time()}.png")  # Save instead of show
+    plt.close()

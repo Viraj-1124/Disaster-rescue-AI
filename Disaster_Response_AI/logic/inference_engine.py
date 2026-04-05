@@ -4,7 +4,8 @@ from logic.rules import (
     rule_high_priority,
     rule_medium_priority,
     rule_low_priority,
-    rule_need_refuel
+    rule_need_refuel,
+    rule_avoid_low_fuel
 )
 
 class InferenceEngine:
@@ -26,4 +27,14 @@ class InferenceEngine:
         return conclusions
 
     def evaluate_ambulance(self, ambulance, required_fuel):
-        return rule_need_refuel(ambulance, required_fuel)
+        # Check if refuel is needed
+        refuel_decision = rule_need_refuel(ambulance, required_fuel)
+        if refuel_decision:
+            return refuel_decision
+        
+        # Check if assignment should be rejected due to low fuel
+        reject_decision = rule_avoid_low_fuel(ambulance, required_fuel)
+        if reject_decision:
+            return reject_decision
+        
+        return None

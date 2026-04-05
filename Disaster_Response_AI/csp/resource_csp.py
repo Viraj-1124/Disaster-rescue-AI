@@ -68,8 +68,11 @@ class ResourceCSP:
             if self.engine:
                 decision = self.engine.evaluate_ambulance(ambulance, total_distance)
 
-                if decision and decision.get("action") == "REFUEL":
-                    return False  # agent rejects this assignment
+                if decision:
+                    if decision.get("decision") == "REJECT_ASSIGNMENT":
+                        return False
+                    elif decision.get("action") == "REFUEL":
+                        return False  # agent rejects this assignment
             # =================================================
 
             # fuel constraint (fallback if no agent logic)

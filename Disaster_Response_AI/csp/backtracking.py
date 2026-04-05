@@ -37,7 +37,7 @@ def backtracking_search(csp):
                     if csp.is_valid(new_assignment):
                         backtrack(new_assignment)
 
-                return  # important (same as your logic)
+                # Removed premature return - allow trying other variables
 
     backtrack({})
     return best_assignment

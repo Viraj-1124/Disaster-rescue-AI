@@ -96,9 +96,9 @@ city.block_road('D','I')
 city.block_road('N','O')
 
 ambulances = [
-{"id":"A1","location":"A","fuel":20},
-{"id":"A2","location":"M","fuel":15},
-{"id":"A3","location":"Q","fuel":18}
+{"id":"A1","location":"A","fuel":50},
+{"id":"A2","location":"M","fuel":40},
+{"id":"A3","location":"Q","fuel":45}
 ]
 
 victims = [
@@ -156,7 +156,7 @@ while remaining_victims:
 
     print(f"\n================ RESCUE ROUND {round_number} ================")
 
-    csp = ResourceCSP(ambulances, victims, hospital_capacity, city, engine)
+    csp = ResourceCSP(ambulances, remaining_victims, hospital_capacity, city, engine)
     solution = backtracking_search(csp)
 
     if not solution:
