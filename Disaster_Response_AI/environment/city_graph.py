@@ -81,6 +81,15 @@ class CityGraph:
 
         return neighbors
 
+    def get_distance(self, from_node, to_node):
+        """
+        Get the distance (cost) between two directly connected nodes.
+        Returns None if no direct connection.
+        """
+        if from_node in self.graph and to_node in self.graph[from_node]:
+            return self.graph[from_node][to_node]
+        return None
+
     # -------------------------------
     # Utility / Debug
     # -------------------------------

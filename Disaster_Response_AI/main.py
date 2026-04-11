@@ -5,9 +5,11 @@ from search.astar import astar
 from evaluation.comparison import compare_uninformed
 from csp.resource_csp import ResourceCSP
 from csp.backtracking import backtracking_search
-from visualization.graph_visualizer import visualize_city
+from visualization.graph_visualizer import GraphVisualizer
 from logic.knowledge_base import KnowledgeBase
 from logic.inference_engine import InferenceEngine
+from planning.state import State
+from planning.planner import GoalStackPlanner, generate_rescue_plan
 
 
 city = CityGraph()
@@ -61,6 +63,23 @@ city.add_road('L','HOSP',3)
 city.add_road('T','HOSP',7)
 city.add_road('P','HOSP',6)
 
+# FUEL STATIONS - Add fuel stations at strategic locations
+FUEL_STATIONS = ['FUEL1', 'FUEL2', 'FUEL3']
+city.add_location('FUEL1')
+city.add_location('FUEL2') 
+city.add_location('FUEL3')
+
+# Connect fuel stations to city
+city.add_road('A','FUEL1',2)      # Central fuel station
+city.add_road('M','FUEL2',3)      # South fuel station  
+city.add_road('Q','FUEL3',4)      # West fuel station
+city.add_road('HOSP','FUEL1',5)   # Hospital connected to central fuel
+
+# Set coordinates for fuel stations
+city.set_coordinates('FUEL1', 0, 4)
+city.set_coordinates('FUEL2', 5, 0) 
+city.set_coordinates('FUEL3', -3, 4)
+
 
 # CITY COORDINATES
 city.set_coordinates('A',0,5)
@@ -96,9 +115,9 @@ city.block_road('D','I')
 city.block_road('N','O')
 
 ambulances = [
-{"id":"A1","location":"A","fuel":50},
-{"id":"A2","location":"M","fuel":40},
-{"id":"A3","location":"Q","fuel":45}
+{"id":"A1","location":"A","fuel":120},  # Low but sufficient for some paths
+{"id":"A2","location":"M","fuel":100},  # Low fuel
+{"id":"A3","location":"Q","fuel":800}    # Very low fuel
 ]
 
 victims = [
@@ -149,15 +168,19 @@ compare_uninformed(city, 'A', 'H')
 csp = ResourceCSP(ambulances, victims, hospital_capacity, city, engine)
 remaining_victims = victims.copy()
 round_number = 1
+rescue_summary = []
 
 print("\nStarting Disaster Rescue Simulation...")
-visualize_city(city, ambulances, victims, "HOSP", None)
+visualizer = GraphVisualizer(city, "HOSP", pause_time=0.6)
+visualizer.draw_state(ambulances, victims, title="Initial state")
 while remaining_victims:
 
     print(f"\n================ RESCUE ROUND {round_number} ================")
 
     csp = ResourceCSP(ambulances, remaining_victims, hospital_capacity, city, engine)
     solution = backtracking_search(csp)
+    
+    print(f"DEBUG: CSP found solution: {solution}")  # Debug output
 
     if not solution:
         print("No further rescues possible due to fuel or constraints.")
@@ -177,45 +200,124 @@ while remaining_victims:
     ambulance_data = {a["id"]: a for a in ambulances}
     victim_data = {v["id"]: v for v in remaining_victims}
 
+    # Create initial state for planning
+    initial_state = State(ambulances, remaining_victims, "HOSP", FUEL_STATIONS)
+
+    # Track actually rescued victims
+    actually_rescued = []
+
     for victim, ambulance in solution.items():
 
         v = victim_data[victim]
         a = ambulance_data[ambulance]
 
-        # Path ambulance -> victim
-        path_to_victim, dist1, _ = astar(city, a["location"], v["location"])
+        print(f"\n--- Planning Rescue for Ambulance {ambulance} → Victim {victim} ---")
+        print(f"Severity: {v['severity']}, Location: {v['location']}")
+        print(f"Ambulance Location: {a['location']}, Fuel: {a['fuel']}")
 
-        # Path victim -> hospital
-        path_to_hospital, dist2, _ = astar(city, v["location"], "HOSP")
+        start_location = a['location']
 
-        total_distance = dist1 + dist2
+        # Generate rescue plan using Goal Stack Planning
+        plan = generate_rescue_plan(ambulance, victim, v["location"], initial_state, city)
 
-        print(f"\nAmbulance {ambulance} assigned to Victim {victim}")
-        print(f"Severity: {v['severity']}")
-        print(f"Distance to victim: {dist1}")
-        print(f"Distance to hospital: {dist2}")
-        print(f"Total rescue distance: {total_distance}")
-        print(f"Fuel available: {a['fuel']}")
+        if plan:
+            print(f"Generated Plan ({len(plan)} actions):")
+            for i, action in enumerate(plan, 1):
+                print(f"  {i}. {action}")
 
-        print(f"Path to victim: {path_to_victim}")
-        print(f"Path to hospital: {path_to_hospital}")
-
-        # update fuel
-        a["fuel"] = max(0, a["fuel"] - total_distance)
-
-        # ambulance now at hospital
-        a["location"] = "HOSP"
-    visualize_city(city, ambulances, remaining_victims, "HOSP", solution)
+            print("\nAnimating Plan on map...")
+            visualizer.animate_plan(ambulances, remaining_victims, plan, title=f"Rescue plan for {victim} by {ambulance}")
+            
+            # Execute the plan step by step
+            print("\nExecuting Plan:")
+            current_state = initial_state.copy()
+            plan_successful = True
+            
+            for action in plan:
+                print(f"  Executing: {action}")
+                
+                # Check if action is valid in current state
+                preconditions_met = all(current_state.check_precondition(precond) 
+                                      for precond in action.preconditions)
+                
+                if not preconditions_met:
+                    print(f"    ❌ Precondition failed for {action}")
+                    plan_successful = False
+                    break
+                
+                # Apply action effects
+                current_state.apply_action(action)
+                
+                # Update actual ambulance data
+                if action.name == "MOVE":
+                    amb_id, _, to_loc = action.parameters
+                    ambulance_data[amb_id]["location"] = to_loc
+                    # Fuel consumption
+                    distance = city.get_distance(action.parameters[1], to_loc) or 1
+                    ambulance_data[amb_id]["fuel"] = max(0, ambulance_data[amb_id]["fuel"] - distance)
+                
+                elif action.name == "PICK":
+                    amb_id, vic_id = action.parameters
+                    print(f"    ✅ Ambulance {amb_id} picked up Victim {vic_id}")
+                
+                elif action.name == "DROP":
+                    amb_id, vic_id = action.parameters
+                    print(f"    ✅ Ambulance {amb_id} delivered Victim {vic_id} to hospital")
+                    actually_rescued.append(vic_id)
+                    rescue_summary.append({
+                        "victim": vic_id,
+                        "ambulance": amb_id,
+                        "plan_length": len(plan),
+                        "final_location": ambulance_data[amb_id]["location"],
+                        "start_location": start_location,
+                        "fuel_remaining": ambulance_data[amb_id]["fuel"],
+                        "refueled": any(act.name == "REFUEL" for act in plan)
+                    })
+                
+                elif action.name == "REFUEL":
+                    amb_id, fuel_station = action.parameters
+                    ambulance_data[amb_id]["fuel"] = 100  # Max fuel
+                    print(f"    ⛽ Ambulance {amb_id} refueled at {fuel_station}")
+            
+            if plan_successful:
+                # Update initial state for next planning
+                initial_state = current_state
+            else:
+                print("    ❌ Plan execution failed")
+        
+        else:
+            print("❌ No plan could be generated for this rescue")
+    
+    # Update remaining victims - only remove actually rescued ones
+    remaining_victims = [v for v in remaining_victims if v["id"] not in actually_rescued]
+    visualizer.draw_state(ambulances, remaining_victims, title=f"After round {round_number}")
 
     # remove rescued victims
     remaining_victims = pending
 
     round_number += 1
 
-if remaining_victims:
+print("\n========== FINAL VERDICT ==========")
+if rescue_summary:
+    print(f"Total rescued victims: {len(rescue_summary)} / {len(victims)}")
+    for item in rescue_summary:
+        print(f"  - Victim {item['victim']} rescued by Ambulance {item['ambulance']}")
+        print(f"      Plan length: {item['plan_length']} actions")
+        print(f"      Start: {item['start_location']} → End: {item['final_location']}")
+        print(f"      Fuel remaining: {item['fuel_remaining']}")
+        print(f"      Refueled during rescue: {'Yes' if item['refueled'] else 'No'}")
+else:
+    print("No victims were rescued in this simulation.")
 
-    print("\n========== FINAL STATUS ==========")
-    print("Pending victims due to limited resources:")
+print("\nOverall strategy:")
+print("  - Logical Agent: priority-based victim scoring")
+print("  - CSP Assignment: ambulance-to-victim matching")
+print("  - Planning: stepwise MOVE, PICK, DROP actions")
+print("  - Path search: A* for MOVE action routing")
+print("  - Fuel management: refueling planned when needed")
+
+if remaining_victims:
+    print("\nPending victims due to limited resources:")
     for victim in remaining_victims:
         reasoning = engine.evaluate_victim(victim)
         victim.update(reasoning)

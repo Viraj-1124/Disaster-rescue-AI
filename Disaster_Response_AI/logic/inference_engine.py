@@ -27,14 +27,14 @@ class InferenceEngine:
         return conclusions
 
     def evaluate_ambulance(self, ambulance, required_fuel):
-        # Check if refuel is needed
+        # Check if refuel is needed (but don't reject - planning handles it)
         refuel_decision = rule_need_refuel(ambulance, required_fuel)
         if refuel_decision:
             return refuel_decision
         
-        # Check if assignment should be rejected due to low fuel
-        reject_decision = rule_avoid_low_fuel(ambulance, required_fuel)
-        if reject_decision:
-            return reject_decision
+        # Don't reject due to low fuel - planning module handles refueling
+        # reject_decision = rule_avoid_low_fuel(ambulance, required_fuel)
+        # if reject_decision:
+        #     return reject_decision
         
         return None

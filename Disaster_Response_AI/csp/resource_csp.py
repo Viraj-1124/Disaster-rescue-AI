@@ -46,6 +46,7 @@ class ResourceCSP:
         for victim_id, ambulance_id in assignment.items():
 
             if ambulance_id in used_ambulances:
+                print(f"DEBUG: Ambulance {ambulance_id} already used")  # Debug
                 return False
 
             used_ambulances.add(ambulance_id)
@@ -60,6 +61,7 @@ class ResourceCSP:
             path2, dist2, _ = astar(self.city_graph, goal, "HOSP")
 
             if path is None or path2 is None:
+                print(f"DEBUG: No path found: {start} -> {goal} or {goal} -> HOSP")  # Debug
                 return False
 
             total_distance = dist1 + dist2
@@ -70,18 +72,22 @@ class ResourceCSP:
 
                 if decision:
                     if decision.get("decision") == "REJECT_ASSIGNMENT":
+                        print(f"DEBUG: Agent rejected assignment: {decision}")  # Debug
                         return False
                     elif decision.get("action") == "REFUEL":
+                        print(f"DEBUG: Agent suggests refuel: {decision}")  # Debug
                         return False  # agent rejects this assignment
             # =================================================
 
-            # fuel constraint (fallback if no agent logic)
-            if not self.engine and total_distance > ambulance["fuel"]:
-                return False
+            # fuel constraint (relaxed for planning - planning module handles refueling)
+            # if not self.engine and total_distance > ambulance["fuel"]:
+            #     return False
 
         if len(assignment) > self.hospital_capacity:
+            print(f"DEBUG: Exceeded hospital capacity: {len(assignment)} > {self.hospital_capacity}")  # Debug
             return False
 
+        print(f"DEBUG: Assignment is valid: {assignment}")  # Debug
         return True
     
     def calculate_score(self, assignment):
