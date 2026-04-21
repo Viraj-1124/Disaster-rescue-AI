@@ -1,15 +1,16 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import config
 
 
 class GraphVisualizer:
     """Persistent graph visualizer for rescue planning animation."""
 
-    def __init__(self, city, hospital, pause_time=0.5, fuel_stations=None):
+    def __init__(self, city, hospital, pause_time=None, fuel_stations=None):
         self.city = city
         self.hospital = hospital
         self.fuel_stations = fuel_stations if fuel_stations is not None else [node for node in city.graph if str(node).upper().startswith("FUEL")]
-        self.pause_time = pause_time
+        self.pause_time = pause_time if pause_time is not None else config.ANIMATION_SPEED
         self.pos = city.coordinates
         self.G = nx.Graph()
         self._build_graph()
@@ -87,13 +88,13 @@ class GraphVisualizer:
                 amb_id, fuel_station = action.parameters
                 ambulance_positions[amb_id] = fuel_station
 
-            self._draw_step(ambulance_positions, victim_positions, carried_victims,
+            self.draw_step(ambulance_positions, victim_positions, carried_victims,
                             delivered_victims, action_text)
 
-        self._draw_step(ambulance_positions, victim_positions, carried_victims,
+        self.draw_step(ambulance_positions, victim_positions, carried_victims,
                         delivered_victims, "Plan complete")
 
-    def _draw_step(self, ambulance_positions, victim_positions, carried_victims, delivered_victims, action_text):
+    def draw_step(self, ambulance_positions, victim_positions, carried_victims, delivered_victims, action_text):
         self.ax.clear()
 
         normal_edges = []
@@ -146,7 +147,7 @@ class GraphVisualizer:
 
 
 def visualize_city(*args, **kwargs):
-    visualizer = GraphVisualizer(args[0], args[3], pause_time=kwargs.get('pause_time', 0.5))
+    visualizer = GraphVisualizer(args[0], args[3], pause_time=kwargs.get('pause_time', config.ANIMATION_SPEED))
     if kwargs.get('plan'):
         visualizer.animate_plan(args[1], args[2], kwargs.get('plan'))
     else:

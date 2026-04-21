@@ -8,6 +8,7 @@ AI Concepts:
 - State representation in classical planning
 - Initial state and goal state
 """
+import config
 
 class State:
     """
@@ -33,6 +34,7 @@ class State:
         self.ambulance_locations = {a["id"]: a["location"] for a in ambulances}
         self.ambulance_fuel = {a["id"]: a["fuel"] for a in ambulances}
         self.victim_status = {v["id"]: "waiting" for v in victims}
+        self.victim_locations = {v["id"]: v["location"] for v in victims}
         self.hospital = hospital
         self.fuel_stations = fuel_stations or []
         
@@ -120,7 +122,14 @@ class State:
             if delete:
                 pass  # Not typical
             else:
-                self.ambulance_fuel[ambulance_id] = fuel_level
+                self.ambulance_fuel[ambulance_id] = min(config.MAX_FUEL, max(0, fuel_level))
+
+        elif effect_type == "fuel_change":
+            ambulance_id, fuel_delta = params
+            if delete:
+                pass  # Not typical
+            else:
+                self.ambulance_fuel[ambulance_id] = min(config.MAX_FUEL, max(0, self.ambulance_fuel.get(ambulance_id, 0) + fuel_delta))
     
     def check_precondition(self, precondition):
         """Check if a precondition is satisfied in current state."""

@@ -10,6 +10,7 @@ AI Concepts:
 - Add and delete lists
 """
 
+import config
 from search.astar import astar
 
 class Action:
@@ -61,7 +62,8 @@ def create_move_action(ambulance_id, from_loc, to_loc, distance):
             ("fuel_sufficient", ambulance_id, distance)
         ],
         add_effects=[
-            ("at", ambulance_id, to_loc)
+            ("at", ambulance_id, to_loc),
+            ("fuel_change", ambulance_id, -distance)
         ],
         delete_effects=[
             ("at", ambulance_id, from_loc)
@@ -145,7 +147,7 @@ def create_refuel_action(ambulance_id, fuel_station):
             ("at", ambulance_id, fuel_station)
         ],
         add_effects=[
-            ("fuel", ambulance_id, 100)  # Restore to max fuel
+            ("fuel", ambulance_id, config.MAX_FUEL)  # Restore to max fuel
         ],
         delete_effects=[]  # No delete effects for refuel
     )
@@ -184,7 +186,7 @@ def generate_move_actions(ambulance_id, current_loc, path, city_graph, current_f
             nearest_fuel = find_nearest_fuel_station(from_loc, fuel_stations, city_graph)
             if nearest_fuel:
                 # Generate moves to fuel station
-                fuel_path, _ = astar(city_graph, from_loc, nearest_fuel)
+                fuel_path, _, _ = astar(city_graph, from_loc, nearest_fuel)
                 if fuel_path:
                     for j in range(len(fuel_path) - 1):
                         f_from = fuel_path[j]
@@ -194,7 +196,7 @@ def generate_move_actions(ambulance_id, current_loc, path, city_graph, current_f
                     
                     # Add refuel action
                     actions.append(create_refuel_action(ambulance_id, nearest_fuel))
-                    fuel = 100  # Refueled
+                    fuel = config.MAX_FUEL  # Refueled
         
         # Add the original move
         actions.append(create_move_action(ambulance_id, from_loc, to_loc, distance))

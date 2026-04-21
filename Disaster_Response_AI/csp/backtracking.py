@@ -8,6 +8,8 @@ AI Concepts Covered:
 - Constraint Satisfaction Problem
 - Backtracking Search
 """
+import config
+
 
 def backtracking_search(csp):
 
@@ -18,7 +20,8 @@ def backtracking_search(csp):
 
         nonlocal best_assignment, best_score
 
-        print(f"DEBUG: Trying assignment: {assignment}")  # Debug
+        if config.DEBUG:
+            print(f"DEBUG: Trying assignment: {assignment}")
 
         if len(assignment) > 0:
             score = csp.calculate_score(assignment)
@@ -37,13 +40,15 @@ def backtracking_search(csp):
                     new_assignment[var] = value
 
                     if csp.is_valid(new_assignment):
-                        print(f"DEBUG: Valid assignment found: {new_assignment}")  # Debug
+                        if config.DEBUG:
+                            print(f"DEBUG: Valid assignment found: {new_assignment}")
                         backtrack(new_assignment)
 
                 # Removed premature return - allow trying other variables
 
     backtrack({})
-    print(f"DEBUG: Best assignment: {best_assignment}, score: {best_score}")  # Debug
+    if config.DEBUG:
+        print(f"DEBUG: Best assignment: {best_assignment}, score: {best_score}")
     return best_assignment
 
 

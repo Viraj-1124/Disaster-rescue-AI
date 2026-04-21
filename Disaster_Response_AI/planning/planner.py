@@ -13,6 +13,7 @@ AI Concepts:
 
 from .state import State
 from .actions import Action, create_move_action, create_pick_action, create_drop_action, create_refuel_action, generate_move_actions
+import config
 
 
 class GoalStackPlanner:
@@ -208,7 +209,7 @@ def generate_rescue_plan(ambulance_id, victim_id, victim_location, initial_state
                                                city_graph, current_fuel, initial_state.fuel_stations)
             plan.extend(move_actions)
             # Update fuel for next segment (simplified)
-            current_fuel = 100  # Assume refueled if needed
+            current_fuel = config.MAX_FUEL  # Assume refueled if needed
     
     # 2. PICK action
     pick_action = create_pick_action(ambulance_id, victim_id, victim_location)
