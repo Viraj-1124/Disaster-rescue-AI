@@ -170,37 +170,50 @@ def generate_move_actions(ambulance_id, current_loc, path, city_graph, current_f
     """
     actions = []
     fuel = current_fuel
+    def path_length(p):
+        from search.astar import astar
+        return sum((city_graph.get_distance(p[k], p[k+1]) or 1) for k in range(len(p)-1)) if p else 0
+
+    current_path = path.copy()
     
-    for i in range(len(path) - 1):
-        from_loc = path[i]
-        to_loc = path[i + 1]
+    while len(current_path) > 1:
+        from_loc = current_path[0]
+        to_loc = current_path[1]
         
-        # Calculate distance
-        distance = city_graph.get_distance(from_loc, to_loc)
-        if distance is None:
-            distance = 1  # Default if no weight
+        distance = city_graph.get_distance(from_loc, to_loc) or 1
         
-        # Check if we have enough fuel for this move
-        if fuel < distance:
+        # Check if we have enough fuel for the REST of the path plus a safety margin
+        # The safety margin (15) ensures it has enough fuel to reach a fuel station
+        # after arriving at its destination.
+        if fuel < path_length(current_path) + 15:
             # Need to refuel - find nearest fuel station
             nearest_fuel = find_nearest_fuel_station(from_loc, fuel_stations, city_graph)
-            if nearest_fuel:
-                # Generate moves to fuel station
-                fuel_path, _, _ = astar(city_graph, from_loc, nearest_fuel)
-                if fuel_path:
+            if nearest_fuel and nearest_fuel != from_loc:
+                fuel_path, f_cost, _ = astar(city_graph, from_loc, nearest_fuel)
+                if fuel_path and fuel >= f_cost:
+                    # Generate moves to fuel station
                     for j in range(len(fuel_path) - 1):
                         f_from = fuel_path[j]
                         f_to = fuel_path[j + 1]
                         f_dist = city_graph.get_distance(f_from, f_to) or 1
                         actions.append(create_move_action(ambulance_id, f_from, f_to, f_dist))
+                        fuel -= f_dist
                     
                     # Add refuel action
                     actions.append(create_refuel_action(ambulance_id, nearest_fuel))
                     fuel = config.MAX_FUEL  # Refueled
+                    
+                    # Recompute path to destination
+                    final_dest = current_path[-1]
+                    new_path, _, _ = astar(city_graph, nearest_fuel, final_dest)
+                    if new_path:
+                        current_path = new_path
+                        continue
         
         # Add the original move
         actions.append(create_move_action(ambulance_id, from_loc, to_loc, distance))
         fuel -= distance
+        current_path.pop(0)
     
     return actions
 

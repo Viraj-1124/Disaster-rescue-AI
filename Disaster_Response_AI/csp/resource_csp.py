@@ -13,9 +13,9 @@ AI Concepts Covered:
 - Constraints
 """
 PRIORITY_WEIGHTS = {
-    "HIGH": 100,
-    "MEDIUM": 50,
-    "LOW": 10
+    "HIGH": 1000,
+    "MEDIUM": 500,
+    "LOW": 100
 }
 
 class ResourceCSP:
@@ -77,7 +77,8 @@ class ResourceCSP:
                         return False
                     elif decision.get("action") == "REFUEL":
                         if config.DEBUG: print(f"DEBUG: Agent suggests refuel: {decision}")  # Debug
-                        return False  # agent rejects this assignment
+                        # Allow assignment; the planning module handles refueling
+                        pass
             # =================================================
 
             # fuel constraint (relaxed for planning - planning module handles refueling)

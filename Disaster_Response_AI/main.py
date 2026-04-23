@@ -120,9 +120,9 @@ city.block_road('D','I')
 city.block_road('N','O')
 
 ambulances = [
-{"id":"A1","location":"A","fuel":120},  # Low but sufficient for some paths
-{"id":"A2","location":"M","fuel":100},  # Low fuel
-{"id":"A3","location":"Q","fuel":800}    # Very low fuel
+{"id":"A1","location":"A","fuel":50},
+{"id":"A2","location":"M","fuel":45},
+{"id":"A3","location":"Q","fuel":40}
 ]
 
 victims = [
@@ -185,7 +185,17 @@ while remaining_victims and round_number <= config.MAX_ROUNDS:
     if len(victims) >= config.MAX_TOTAL_VICTIMS:
         print("Max total victims reached. No new victims will be added.")
 
-    csp = ResourceCSP(ambulances, remaining_victims, hospital_capacity, city, engine)
+    from planning.actions import find_nearest_fuel_station
+    active_ambulances = []
+    for amb in ambulances:
+        nearest = find_nearest_fuel_station(amb["location"], FUEL_STATIONS, city)
+        path, dist, _ = astar(city, amb["location"], nearest)
+        if path and amb["fuel"] >= dist:
+            active_ambulances.append(amb)
+        else:
+            print(f"    [!] Ambulance {amb['id']} is stranded at {amb['location']} with fuel {amb['fuel']} and out of service!")
+
+    csp = ResourceCSP(active_ambulances, remaining_victims, hospital_capacity, city, engine)
     solution = backtracking_search(csp)
     
     if config.DEBUG:
@@ -228,12 +238,14 @@ while remaining_victims and round_number <= config.MAX_ROUNDS:
 
         # Generate rescue plan using Goal Stack Planning
         current_state = initial_state.copy()
-        plan = generate_rescue_plan(ambulance, victim, v["location"], current_state, city)
+        result = generate_rescue_plan(ambulance, victim, v["location"], current_state, city)
         
-        if plan:
+        if result:
+            plan, full_path = result  # Unpack plan and path
             all_plans[ambulance] = {
                 "victim": victim,
                 "plan": plan,
+                "full_path": full_path,  # Store complete path
                 "current_state": current_state,
                 "start_location": a['location']
             }
@@ -278,12 +290,14 @@ while remaining_victims and round_number <= config.MAX_ROUNDS:
                     print(f"    [!] Action failed for {amb_id}: {reason}")
                     print(f"    [>] Replanning due to blocked road or fuel issue...")
                     
-                    new_plan = generate_rescue_plan(amb_id, vic_id, victim_data[vic_id]["location"], amb_state.copy(), city)
-                    if new_plan:
+                    result = generate_rescue_plan(amb_id, vic_id, victim_data[vic_id]["location"], amb_state.copy(), city)
+                    if result:
+                        new_plan, new_path = result  # Unpack tuple
                         print(f"    [OK] Replan successful. Found new path.")
                         # Pad the new plan so it starts executing at the current step_idx
                         padded_plan = [None] * step_idx + new_plan
                         all_plans[amb_id]["plan"] = padded_plan
+                        all_plans[amb_id]["full_path"] = new_path  # Update path too
                         action = padded_plan[step_idx] # Update action to the very first step of the new plan
                         
                         # Validate the NEW action just to be safe
@@ -326,8 +340,8 @@ while remaining_victims and round_number <= config.MAX_ROUNDS:
                         "victim": d_vic_id,
                         "ambulance": amb_id,
                         "plan_length": len(plan),
+                        "full_path": " >> ".join(data.get("full_path", [])),  # Complete path
                         "final_location": ambulance_positions[amb_id],
-                        "start_location": data["start_location"],
                         "fuel_remaining": ambulance_data[amb_id]["fuel"],
                         "refueled": any(act.name == "REFUEL" for act in plan if act is not None)
                     })
@@ -374,9 +388,9 @@ print("\n========== FINAL VERDICT ==========")
 if rescue_summary:
     print(f"Total rescued victims: {len(rescue_summary)} / {len(victims)}")
     for item in rescue_summary:
-        print(f"  - Victim {item['victim']} rescued by Ambulance {item['ambulance']}")
+        print(f"\n  - Victim {item['victim']} rescued by Ambulance {item['ambulance']}")
+        print(f"      Path: {item['full_path']}")
         print(f"      Plan length: {item['plan_length']} actions")
-        print(f"      Start: {item['start_location']} >> End: {item['final_location']}")
         print(f"      Fuel remaining: {item['fuel_remaining']}")
         print(f"      Refueled during rescue: {'Yes' if item['refueled'] else 'No'}")
 else:
@@ -387,10 +401,12 @@ print("  - Logical Agent: priority-based victim scoring")
 print("  - CSP Assignment: ambulance-to-victim matching")
 print("  - Planning: stepwise MOVE, PICK, DROP actions")
 print("  - Path search: A* for MOVE action routing")
-print("  - Fuel management: refueling planned when needed")
+print("  - Fuel management: refueling at fuel stations when needed")
 
 if remaining_victims:
-    print("\nPending victims due to limited resources:")
+    print("\n========== PENDING VICTIMS ANALYSIS ==========")
+    print(f"Total pending: {len(remaining_victims)}")
+    
     for victim in remaining_victims:
         reasoning = engine.evaluate_victim(victim)
         victim.update(reasoning)
@@ -398,6 +414,34 @@ if remaining_victims:
     remaining_victims.sort(key=lambda v: priority_order.get(v.get("priority", "LOW")))
 
     for v in remaining_victims:
-        print(f"\nVictim {v['id']}")
-        print("Severity:", v["severity"])
-        print("Reason: insufficient fuel or unreachable location")
+        vic_loc = v['location']
+        
+        # Check if location is reachable from any ambulance
+        reachable = False
+        closest_amb = None
+        min_distance = float('inf')
+        
+        for amb in ambulances:
+            path, distance, _ = astar(city, amb["location"], vic_loc)
+            if path:
+                reachable = True
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_amb = amb["id"]
+        
+        # Check path from victim to hospital
+        path_to_hosp, _, _ = astar(city, vic_loc, "HOSP")
+        hosp_reachable = path_to_hosp is not None
+        
+        print(f"\n  Victim {v['id']} (Severity: {v['severity']}, Priority: {v.get('priority', 'LOW')})")
+        print(f"      Location: {vic_loc}")
+        
+        if not reachable:
+            print(f"      Status: UNREACHABLE - No ambulance can reach this location")
+        elif not hosp_reachable:
+            print(f"      Status: UNREACHABLE - Cannot reach hospital from victim location")
+        elif closest_amb:
+            print(f"      Status: FUEL CONSTRAINT - Closest ambulance is {closest_amb} ({min_distance} distance away)")
+            print(f"                             All ambulances depleted fuel or reassigned to priority victims")
+        else:
+            print(f"      Status: RESOURCE CONSTRAINT - No available ambulances")

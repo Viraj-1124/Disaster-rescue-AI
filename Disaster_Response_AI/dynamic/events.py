@@ -67,7 +67,7 @@ def fuel_drop(ambulance):
         print(f"[EVENT] Ambulance {ambulance['id']} already has no fuel.")
         return 0
 
-    loss = random.randint(10, 30)
+    loss = random.randint(2, 5)
     ambulance["fuel"] = max(0, current_fuel - loss)
     print(f"[EVENT] Ambulance {ambulance['id']} lost {loss} fuel due to an emergency event. Remaining fuel: {ambulance['fuel']}.")
     return ambulance["fuel"]
