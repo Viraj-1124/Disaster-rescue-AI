@@ -6,11 +6,12 @@ import config
 class GraphVisualizer:
     """Persistent graph visualizer for rescue planning animation."""
 
-    def __init__(self, city, hospital, pause_time=None, fuel_stations=None):
+    def __init__(self, city, hospital, pause_time=None, fuel_stations=None, st_container=None):
         self.city = city
         self.hospital = hospital
         self.fuel_stations = fuel_stations if fuel_stations is not None else [node for node in city.graph if str(node).upper().startswith("FUEL")]
         self.pause_time = pause_time if pause_time is not None else config.ANIMATION_SPEED
+        self.st_container = st_container
         self.pos = city.coordinates
         self.G = nx.Graph()
         self._build_graph()
@@ -61,8 +62,17 @@ class GraphVisualizer:
         self.ax.set_title(f"AI Disaster Rescue Simulation | {title}")
         self.ax.axis("off")
 
-        self.fig.canvas.draw()
-        plt.pause(self.pause_time)
+        if getattr(self, 'st_container', None):
+            import io
+            buf = io.BytesIO()
+            self.fig.savefig(buf, format="png", bbox_inches="tight")
+            self.st_container.image(buf)
+            import time
+            if self.pause_time > 0:
+                time.sleep(self.pause_time)
+        else:
+            self.fig.canvas.draw()
+            plt.pause(self.pause_time)
 
     def animate_plan(self, ambulances, victims, plan, title="Plan animation"):
         victim_positions = {v["id"]: v["location"] for v in victims}
@@ -138,8 +148,17 @@ class GraphVisualizer:
         self.ax.set_title(f"AI Disaster Rescue Simulation | {action_text}")
         self.ax.axis("off")
 
-        self.fig.canvas.draw()
-        plt.pause(self.pause_time)
+        if getattr(self, 'st_container', None):
+            import io
+            buf = io.BytesIO()
+            self.fig.savefig(buf, format="png", bbox_inches="tight")
+            self.st_container.image(buf)
+            import time
+            if self.pause_time > 0:
+                time.sleep(self.pause_time)
+        else:
+            self.fig.canvas.draw()
+            plt.pause(self.pause_time)
 
     def show(self):
         plt.ioff()
