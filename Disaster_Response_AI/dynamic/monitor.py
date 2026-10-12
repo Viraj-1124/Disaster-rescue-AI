@@ -1,4 +1,3 @@
-"""Execution monitoring helpers for dynamic disaster response."""
 
 
 def is_move_valid(action, city_graph):
@@ -12,10 +11,8 @@ def is_move_valid(action, city_graph):
 
     return not city_graph.is_blocked(from_loc, to_loc)
 
-
 def is_fuel_sufficient(ambulance, required_distance):
     return ambulance.get("fuel", 0) >= required_distance
-
 
 def validate_action(action, state, city_graph):
     if action.name == "MOVE":

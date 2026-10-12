@@ -1,30 +1,8 @@
-"""
-Depth First Search (DFS)
-------------------------
-Uninformed search strategy using LIFO structure.
 
-AI Concepts Covered:
-- Uninformed Search
-- State Space Search
-- Comparison with BFS
-"""
 
 def dfs(city_graph, start, goal):
-    """
-    Perform Depth First Search on the city graph.
 
-    Parameters:
-        city_graph : CityGraph object
-        start      : Start location
-        goal       : Goal location
-
-    Returns:
-        path            : List of nodes from start to goal
-        path_cost       : Total travel cost
-        nodes_expanded  : Number of nodes expanded
-    """
-
-    # Stack for DFS (LIFO)
+    
     stack = []
     stack.append(start)
 
@@ -40,12 +18,12 @@ def dfs(city_graph, start, goal):
             visited.add(current_node)
             nodes_expanded += 1
 
-            # Goal Test
+            
             if current_node == goal:
                 break
 
-            # Expand neighbors
-            # Reverse for consistent traversal order
+            
+            
             neighbors = city_graph.get_neighbors(current_node)
             neighbors.reverse()
 
@@ -54,9 +32,9 @@ def dfs(city_graph, start, goal):
                     parent[neighbor] = current_node
                     stack.append(neighbor)
 
-    # -----------------------
-    # Path Reconstruction
-    # -----------------------
+    
+    
+    
     path = []
     path_cost = 0
 
@@ -70,7 +48,7 @@ def dfs(city_graph, start, goal):
 
     path.reverse()
 
-    # Compute path cost
+    
     for i in range(len(path) - 1):
         path_cost += city_graph.graph[path[i]][path[i + 1]]
 

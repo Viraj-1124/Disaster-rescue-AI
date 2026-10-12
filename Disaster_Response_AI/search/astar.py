@@ -1,22 +1,10 @@
-"""
-A* Search Algorithm
--------------------
-Informed search using heuristic guidance.
 
-AI Concepts Covered:
-- Informed Search
-- Best First Search
-- A* Algorithm
-- Heuristic Function
-"""
 
 import heapq
 import math
 
 def heuristic(node, goal, city_graph):
-    """
-    Euclidean distance heuristic.
-    """
+
     if node not in city_graph.coordinates or goal not in city_graph.coordinates:
         return 0
 
@@ -25,28 +13,19 @@ def heuristic(node, goal, city_graph):
 
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
-
 def astar(city_graph, start, goal):
-    """
-    Perform A* Search on the city graph.
 
-    Returns:
-        path
-        path_cost
-        nodes_expanded
-    """
-
-    # Priority Queue (min-heap)
+    
     open_list = []
     heapq.heappush(open_list, (0, start))
 
-    # Cost from start to node
+    
     g_cost = {start: 0}
 
-    # Parent tracking
+    
     parent = {start: None}
 
-    # Visited set
+    
     closed_set = set()
 
     nodes_expanded = 0
@@ -60,7 +39,7 @@ def astar(city_graph, start, goal):
         closed_set.add(current_node)
         nodes_expanded += 1
 
-        # Goal Test
+        
         if current_node == goal:
             break
 
@@ -75,9 +54,9 @@ def astar(city_graph, start, goal):
                 heapq.heappush(open_list, (f_cost, neighbor))
                 parent[neighbor] = current_node
 
-    # -----------------------
-    # Path Reconstruction
-    # -----------------------
+    
+    
+    
     path = []
     path_cost = 0
 

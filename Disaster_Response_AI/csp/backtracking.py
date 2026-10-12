@@ -1,15 +1,5 @@
-"""
-Backtracking CSP Solver
------------------------
 
-Solves the resource allocation CSP using backtracking.
-
-AI Concepts Covered:
-- Constraint Satisfaction Problem
-- Backtracking Search
-"""
 import config
-
 
 def backtracking_search(csp):
 
@@ -44,20 +34,18 @@ def backtracking_search(csp):
                             print(f"DEBUG: Valid assignment found: {new_assignment}")
                         backtrack(new_assignment)
 
-                # Removed premature return - allow trying other variables
+                
 
     backtrack({})
     if config.DEBUG:
         print(f"DEBUG: Best assignment: {best_assignment}, score: {best_score}")
     return best_assignment
 
-
 def select_unassigned_variable(assignment, csp):
 
     for var in csp.variables:
         if var not in assignment:
             return var
-
 
 def forward_check(var, value, csp):
 
@@ -69,7 +57,6 @@ def forward_check(var, value, csp):
             removed.append((v, value))
 
     return removed
-
 
 def restore_domains(removed, csp):
 

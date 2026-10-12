@@ -1,6 +1,4 @@
-"""
-Global configuration for the Disaster Response Simulation
-"""
+
 
 DEBUG = False
 MAX_FUEL = 100

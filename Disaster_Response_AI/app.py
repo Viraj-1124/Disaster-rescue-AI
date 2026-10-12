@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use("Agg")  # Use non-interactive backend for Streamlit
+matplotlib.use("Agg")  
 
 import streamlit as st
 import random
@@ -27,37 +27,37 @@ def initialize_city(num_ambulances=3):
     kb = KnowledgeBase()
     engine = InferenceEngine()
 
-    # Central Area
+    
     city.add_road('A','B',4)
     city.add_road('A','C',3)
     city.add_road('B','D',5)
     city.add_road('C','D',2)
 
-    # North Area
+    
     city.add_road('B','E',6)
     city.add_road('E','F',3)
     city.add_road('F','G',4)
     city.add_road('G','H',2)
 
-    # East Area
+    
     city.add_road('D','I',5)
     city.add_road('I','J',3)
     city.add_road('J','K',4)
     city.add_road('K','L',2)
 
-    # South Area
+    
     city.add_road('C','M',4)
     city.add_road('M','N',3)
     city.add_road('N','O',5)
     city.add_road('O','P',4)
 
-    # West Area
+    
     city.add_road('A','Q',6)
     city.add_road('Q','R',3)
     city.add_road('R','S',2)
     city.add_road('S','T',4)
 
-    # Cross Connections 
+    
     city.add_road('F','J',6)
     city.add_road('H','L',5)
     city.add_road('G','K',3)
@@ -67,12 +67,12 @@ def initialize_city(num_ambulances=3):
     city.add_road('D','N',5)
     city.add_road('P','T',6)
 
-    # Hospital
+    
     city.add_road('L','HOSP',3)
     city.add_road('T','HOSP',7)
     city.add_road('P','HOSP',6)
 
-    # FUEL STATIONS
+    
     FUEL_STATIONS = ['FUEL1', 'FUEL2', 'FUEL3']
     city.add_location('FUEL1')
     city.add_location('FUEL2') 
@@ -87,7 +87,7 @@ def initialize_city(num_ambulances=3):
     city.set_coordinates('FUEL2', 5, 0) 
     city.set_coordinates('FUEL3', -3, 4)
 
-    # CITY COORDINATES
+    
     city.set_coordinates('A',0,5)
     city.set_coordinates('B',2,7)
     city.set_coordinates('C',2,3)
@@ -139,19 +139,17 @@ def initialize_city(num_ambulances=3):
 st.title("🚑 AI Disaster Response Simulation")
 st.markdown("A dynamic, intelligent rescue agent simulation using A*, Goal Stack Planning, and CSP.")
 
-# Sidebar Configuration
 st.sidebar.header("Configuration")
 config.MAX_ROUNDS = st.sidebar.slider("Max Rounds", 1, 20, 10)
 config.MAX_TOTAL_VICTIMS = st.sidebar.slider("Max Victims", 5, 30, 15)
 config.ANIMATION_SPEED = st.sidebar.slider("Animation Pause (sec)", 0.0, 2.0, 0.0, step=0.05)
 config.SKIP_ANIMATION = st.sidebar.checkbox("Skip Step-by-step Animation (Fast)", False)
-config.DEBUG = st.sidebar.checkbox("Debug Mode", False)
 num_ambulances = st.sidebar.slider("Number of Ambulances", 1, 10, 3)
 
 col1, col2 = st.columns([1, 1])
 
 if st.button("Start Simulation", type="primary"):
-    # Initialize
+    
     city, kb, engine, FUEL_STATIONS, ambulances, victims = initialize_city(num_ambulances)
     hospital_capacity = 10
     priority_order = {"HIGH": 1, "MEDIUM": 2, "LOW": 3}
@@ -166,27 +164,24 @@ if st.button("Start Simulation", type="primary"):
         victims.sort(key=lambda v: priority_order.get(v.get("priority", "LOW")))
         st.code("\n".join(reasoning_text), language="text")
 
-        st.subheader("Search Algorithm Comparison")
+        
         path_bfs, cost_bfs, exp_bfs = bfs(city, 'A', 'H')
         path_dfs, cost_dfs, exp_dfs = dfs(city, 'A', 'H')
         path_ast, cost_ast, exp_ast = astar(city, 'A', 'H')
         
-        search_text = f"--- BFS Result ---\nBFS Path: {path_bfs}\nPath Cost: {cost_bfs}\nNodes Expanded: {exp_bfs}\n\n"
-        search_text += f"--- DFS Result ---\nDFS Path: {path_dfs}\nPath Cost: {cost_dfs}\nNodes Expanded: {exp_dfs}\n\n"
-        search_text += f"--- A* Result ---\nA* Path: {path_ast}\nPath Cost: {cost_ast}\nNodes Expanded: {exp_ast}"
-        st.code(search_text, language="text")
+        
     
     st.subheader("Visual Simulation")
-    # Container for graph
+    
     graph_container = st.empty()
     
-    # Text log container
+    
     log_container = st.empty()
     log_text = []
 
     def log(msg):
         log_text.append(msg)
-        # Keep last 15 lines
+        
         display_text = "\n".join(log_text[-15:])
         log_container.code(display_text, language="text")
 
@@ -347,7 +342,7 @@ if st.button("Start Simulation", type="primary"):
                 if not getattr(config, 'SKIP_ANIMATION', False):
                     visualizer.draw_step(ambulance_positions, victim_positions, carried_victims, delivered_victims, " | ".join(step_action_texts))
             
-            # Dynamic events
+            
             if random.random() < 0.3:
                 block_road(city)
             if random.random() < 0.15:
@@ -385,13 +380,6 @@ if st.button("Start Simulation", type="primary"):
             summary_text += f"      Refueled during rescue: {'Yes' if item['refueled'] else 'No'}\n"
     else:
         summary_text += "\nNo victims were rescued in this simulation.\n"
-
-    summary_text += "\nOverall strategy:\n"
-    summary_text += "  - Logical Agent: priority-based victim scoring\n"
-    summary_text += "  - CSP Assignment: ambulance-to-victim matching\n"
-    summary_text += "  - Planning: stepwise MOVE, PICK, DROP actions\n"
-    summary_text += "  - Path search: A* for MOVE action routing\n"
-    summary_text += "  - Fuel management: refueling at fuel stations when needed\n"
 
     if remaining_victims:
         summary_text += "\n========== PENDING VICTIMS ANALYSIS ==========\n"

@@ -11,49 +11,42 @@ import random
 
 from logic.inference_engine import InferenceEngine
 from planning.state import State
-from planning.planner import GoalStackPlanner, generate_rescue_plan
+from planning.planner import generate_rescue_plan
 from dynamic.events import add_new_victim, block_road, fuel_drop, unblock_road
 from dynamic.monitor import validate_action
 import config
 
-
 city = CityGraph()
-# CITY ROAD NETWORK (25 NODES)
+
 kb = KnowledgeBase()
 
 engine = InferenceEngine()
 
-# Central Area
 city.add_road('A','B',4)
 city.add_road('A','C',3)
 city.add_road('B','D',5)
 city.add_road('C','D',2)
 
-# North Area
 city.add_road('B','E',6)
 city.add_road('E','F',3)
 city.add_road('F','G',4)
 city.add_road('G','H',2)
 
-# East Area
 city.add_road('D','I',5)
 city.add_road('I','J',3)
 city.add_road('J','K',4)
 city.add_road('K','L',2)
 
-# South Area
 city.add_road('C','M',4)
 city.add_road('M','N',3)
 city.add_road('N','O',5)
 city.add_road('O','P',4)
 
-# West Area
 city.add_road('A','Q',6)
 city.add_road('Q','R',3)
 city.add_road('R','S',2)
 city.add_road('S','T',4)
 
-# Cross Connections 
 city.add_road('F','J',6)
 city.add_road('H','L',5)
 city.add_road('G','K',3)
@@ -63,30 +56,24 @@ city.add_road('I','M',7)
 city.add_road('D','N',5)
 city.add_road('P','T',6)
 
-# Hospital
 city.add_road('L','HOSP',3)
 city.add_road('T','HOSP',7)
 city.add_road('P','HOSP',6)
 
-# FUEL STATIONS - Add fuel stations at strategic locations
 FUEL_STATIONS = ['FUEL1', 'FUEL2', 'FUEL3']
 city.add_location('FUEL1')
 city.add_location('FUEL2') 
 city.add_location('FUEL3')
 
-# Connect fuel stations to city
-city.add_road('A','FUEL1',2)      # Central fuel station
-city.add_road('M','FUEL2',3)      # South fuel station  
-city.add_road('Q','FUEL3',4)      # West fuel station
-city.add_road('HOSP','FUEL1',5)   # Hospital connected to central fuel
+city.add_road('A','FUEL1',2)      
+city.add_road('M','FUEL2',3)      
+city.add_road('Q','FUEL3',4)      
+city.add_road('HOSP','FUEL1',5)   
 
-# Set coordinates for fuel stations
 city.set_coordinates('FUEL1', 0, 4)
 city.set_coordinates('FUEL2', 5, 0) 
 city.set_coordinates('FUEL3', -3, 4)
 
-
-# CITY COORDINATES
 city.set_coordinates('A',0,5)
 city.set_coordinates('B',2,7)
 city.set_coordinates('C',2,3)
@@ -114,7 +101,6 @@ city.set_coordinates('T',-8,2)
 
 city.set_coordinates('HOSP',12,3)
 
-#city.block_road('C','E')
 city.block_road('F','J')
 city.block_road('D','I')
 city.block_road('N','O')
@@ -136,7 +122,6 @@ victims = [
 hospital_capacity = 10
 kb.add_victims(victims)
 kb.add_ambulances(ambulances)
-# ================= LOGICAL AGENT EXECUTION =================
 
 print("\n========== LOGICAL AGENT REASONING ==========")
 
@@ -148,7 +133,6 @@ for victim in victims:
 
     print(f"Victim {victim['id']} | Severity: {victim['severity']} | Priority: {victim['priority']}")
 
-# Sort victims based on priority BEFORE CSP
 victims.sort(key=lambda v: priority_order.get(v.get("priority", "LOW")))
 
 print("\n--- BFS Result ---")
@@ -219,10 +203,10 @@ while remaining_victims and round_number <= config.MAX_ROUNDS:
     ambulance_data = {a["id"]: a for a in ambulances}
     victim_data = {v["id"]: v for v in remaining_victims}
 
-    # Create initial state for planning
+    
     initial_state = State(ambulances, remaining_victims, "HOSP", FUEL_STATIONS)
 
-    # Track actually rescued victims
+    
     actually_rescued = []
     
     all_plans = {}
@@ -236,16 +220,16 @@ while remaining_victims and round_number <= config.MAX_ROUNDS:
         print(f"Severity: {v['severity']}, Location: {v['location']}")
         print(f"Ambulance Location: {a['location']}, Fuel: {a['fuel']}")
 
-        # Generate rescue plan using Goal Stack Planning
+        
         current_state = initial_state.copy()
         result = generate_rescue_plan(ambulance, victim, v["location"], current_state, city)
         
         if result:
-            plan, full_path = result  # Unpack plan and path
+            plan, full_path = result  
             all_plans[ambulance] = {
                 "victim": victim,
                 "plan": plan,
-                "full_path": full_path,  # Store complete path
+                "full_path": full_path,  
                 "current_state": current_state,
                 "start_location": a['location']
             }
@@ -258,7 +242,7 @@ while remaining_victims and round_number <= config.MAX_ROUNDS:
         round_number += 1
         continue
         
-    # State tracking for visualization 
+    
     victim_positions = {v["id"]: v["location"] for v in remaining_victims}
     ambulance_positions = {a["id"]: a["location"] for a in ambulances}
     carried_victims = {}
@@ -284,7 +268,7 @@ while remaining_victims and round_number <= config.MAX_ROUNDS:
                 action = plan[step_idx]
                 print(f"  Ambulance {amb_id} executing: {action}")
                 
-                # validate action
+                
                 valid, reason = validate_action(action, amb_state, city)
                 if not valid:
                     print(f"    [!] Action failed for {amb_id}: {reason}")
@@ -292,15 +276,15 @@ while remaining_victims and round_number <= config.MAX_ROUNDS:
                     
                     result = generate_rescue_plan(amb_id, vic_id, victim_data[vic_id]["location"], amb_state.copy(), city)
                     if result:
-                        new_plan, new_path = result  # Unpack tuple
+                        new_plan, new_path = result  
                         print(f"    [OK] Replan successful. Found new path.")
-                        # Pad the new plan so it starts executing at the current step_idx
+                        
                         padded_plan = [None] * step_idx + new_plan
                         all_plans[amb_id]["plan"] = padded_plan
-                        all_plans[amb_id]["full_path"] = new_path  # Update path too
-                        action = padded_plan[step_idx] # Update action to the very first step of the new plan
+                        all_plans[amb_id]["full_path"] = new_path  
+                        action = padded_plan[step_idx] 
                         
-                        # Validate the NEW action just to be safe
+                        
                         valid, reason = validate_action(action, amb_state, city)
                         if not valid:
                             print(f"    [X] Replanned action also failed instantly. Aborting rescue.")
@@ -340,7 +324,7 @@ while remaining_victims and round_number <= config.MAX_ROUNDS:
                         "victim": d_vic_id,
                         "ambulance": amb_id,
                         "plan_length": len(plan),
-                        "full_path": " >> ".join(data.get("full_path", [])),  # Complete path
+                        "full_path": " >> ".join(data.get("full_path", [])),  
                         "final_location": ambulance_positions[amb_id],
                         "fuel_remaining": ambulance_data[amb_id]["fuel"],
                         "refueled": any(act.name == "REFUEL" for act in plan if act is not None)
@@ -360,7 +344,7 @@ while remaining_victims and round_number <= config.MAX_ROUNDS:
         if step_action_texts:
             visualizer.draw_step(ambulance_positions, victim_positions, carried_victims, delivered_victims, " | ".join(step_action_texts))
         
-        # Dynamic events (only once per parallel step)
+        
         if random.random() < 0.3:
             block_road(city)
         if random.random() < 0.15:
@@ -416,7 +400,7 @@ if remaining_victims:
     for v in remaining_victims:
         vic_loc = v['location']
         
-        # Check if location is reachable from any ambulance
+        
         reachable = False
         closest_amb = None
         min_distance = float('inf')
@@ -429,7 +413,7 @@ if remaining_victims:
                     min_distance = distance
                     closest_amb = amb["id"]
         
-        # Check path from victim to hospital
+        
         path_to_hosp, _, _ = astar(city, vic_loc, "HOSP")
         hosp_reachable = path_to_hosp is not None
         

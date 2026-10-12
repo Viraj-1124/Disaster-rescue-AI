@@ -1,17 +1,6 @@
 from search.astar import astar
 import config
-"""
-Resource Allocation CSP
------------------------
 
-Assign ambulances to victims under constraints.
-
-AI Concepts Covered:
-- Constraint Satisfaction Problem
-- Variables
-- Domains
-- Constraints
-"""
 PRIORITY_WEIGHTS = {
     "HIGH": 1000,
     "MEDIUM": 500,
@@ -47,7 +36,7 @@ class ResourceCSP:
         for victim_id, ambulance_id in assignment.items():
 
             if ambulance_id in used_ambulances:
-                if config.DEBUG: print(f"DEBUG: Ambulance {ambulance_id} already used")  # Debug
+                if config.DEBUG: print(f"DEBUG: Ambulance {ambulance_id} already used")  
                 return False
 
             used_ambulances.add(ambulance_id)
@@ -62,34 +51,34 @@ class ResourceCSP:
             path2, dist2, _ = astar(self.city_graph, goal, "HOSP")
 
             if path is None or path2 is None:
-                if config.DEBUG: print(f"DEBUG: No path found: {start} -> {goal} or {goal} -> HOSP")  # Debug
+                if config.DEBUG: print(f"DEBUG: No path found: {start} -> {goal} or {goal} -> HOSP")  
                 return False
 
             total_distance = dist1 + dist2
 
-            # ================== AGENT LOGIC ==================
+            
             if self.engine:
                 decision = self.engine.evaluate_ambulance(ambulance, total_distance)
 
                 if decision:
                     if decision.get("decision") == "REJECT_ASSIGNMENT":
-                        if config.DEBUG: print(f"DEBUG: Agent rejected assignment: {decision}")  # Debug
+                        if config.DEBUG: print(f"DEBUG: Agent rejected assignment: {decision}")  
                         return False
                     elif decision.get("action") == "REFUEL":
-                        if config.DEBUG: print(f"DEBUG: Agent suggests refuel: {decision}")  # Debug
-                        # Allow assignment; the planning module handles refueling
+                        if config.DEBUG: print(f"DEBUG: Agent suggests refuel: {decision}")  
+                        
                         pass
-            # =================================================
+            
 
-            # fuel constraint (relaxed for planning - planning module handles refueling)
-            # if not self.engine and total_distance > ambulance["fuel"]:
-            #     return False
+            
+            
+            
 
         if len(assignment) > self.hospital_capacity:
-            if config.DEBUG: print(f"DEBUG: Exceeded hospital capacity: {len(assignment)} > {self.hospital_capacity}")  # Debug
+            if config.DEBUG: print(f"DEBUG: Exceeded hospital capacity: {len(assignment)} > {self.hospital_capacity}")  
             return False
 
-        if config.DEBUG: print(f"DEBUG: Assignment is valid: {assignment}")  # Debug
+        if config.DEBUG: print(f"DEBUG: Assignment is valid: {assignment}")  
         return True
     
     def calculate_score(self, assignment):
@@ -109,11 +98,11 @@ class ResourceCSP:
 
             if path1 is None or path2 is None:
                 total_distance = float('inf')
-                score -= 10000  # heavy penalty
+                score -= 10000  
             else:
                 total_distance = dist1 + dist2
 
-            # reward closer rescues
+            
             score -= total_distance
 
             total_score += score

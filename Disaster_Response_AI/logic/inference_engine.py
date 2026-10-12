@@ -1,4 +1,4 @@
-# logic/inference_engine.py
+
 
 from logic.rules import (
     rule_high_priority,
@@ -27,14 +27,14 @@ class InferenceEngine:
         return conclusions
 
     def evaluate_ambulance(self, ambulance, required_fuel):
-        # Check if refuel is needed (but don't reject - planning handles it)
+        
         refuel_decision = rule_need_refuel(ambulance, required_fuel)
         if refuel_decision:
             return refuel_decision
         
-        # Don't reject due to low fuel - planning module handles refueling
-        # reject_decision = rule_avoid_low_fuel(ambulance, required_fuel)
-        # if reject_decision:
-        #     return reject_decision
+        
+        
+        
+        
         
         return None

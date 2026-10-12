@@ -2,9 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import config
 
-
 class GraphVisualizer:
-    """Persistent graph visualizer for rescue planning animation."""
 
     def __init__(self, city, hospital, pause_time=None, fuel_stations=None, st_container=None):
         self.city = city
@@ -163,7 +161,6 @@ class GraphVisualizer:
     def show(self):
         plt.ioff()
         plt.show(block=True)
-
 
 def visualize_city(*args, **kwargs):
     visualizer = GraphVisualizer(args[0], args[3], pause_time=kwargs.get('pause_time', config.ANIMATION_SPEED))

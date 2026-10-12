@@ -1,8 +1,7 @@
 import random
 
-
 def block_road(city_graph):
-    """Block a random active road in the city graph."""
+
     active_edges = []
     for node, neighbors in city_graph.graph.items():
         for neighbor in neighbors:
@@ -18,9 +17,8 @@ def block_road(city_graph):
     print(f"[EVENT] Road blocked between {road[0]} and {road[1]} due to disaster.")
     return road
 
-
 def unblock_road(city_graph):
-    """Unblock a random blocked road in the city graph."""
+
     blocked_edges = []
     for u, v in city_graph.blocked_roads:
         if u < v:
@@ -35,9 +33,8 @@ def unblock_road(city_graph):
     print(f"[EVENT] Road restored between {road[0]} and {road[1]}.")
     return road
 
-
 def add_new_victim(victims, city_graph, existing_victim_ids=None):
-    """Add a new victim dynamically to the simulation."""
+
     if existing_victim_ids is None:
         existing_victim_ids = [victim["id"] for victim in victims]
     existing_ids = set(existing_victim_ids)
@@ -59,9 +56,8 @@ def add_new_victim(victims, city_graph, existing_victim_ids=None):
     print(f"[EVENT] New victim {new_victim['id']} appeared at {location} (severity={severity}).")
     return new_victim
 
-
 def fuel_drop(ambulance):
-    """Simulate sudden fuel loss for an ambulance."""
+
     current_fuel = ambulance.get("fuel", 0)
     if current_fuel <= 0:
         print(f"[EVENT] Ambulance {ambulance['id']} already has no fuel.")
